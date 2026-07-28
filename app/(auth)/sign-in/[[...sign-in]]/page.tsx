@@ -1,5 +1,9 @@
 import { SignIn } from "@clerk/nextjs";
 
 export default function Page() {
-  return <SignIn />; // sign-in page component from Clerk
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-base-300 p-4">
+      <SignIn />
+    </div>
+  );
 }
