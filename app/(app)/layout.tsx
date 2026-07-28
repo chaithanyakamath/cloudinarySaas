@@ -125,8 +125,8 @@ export default function AppLayout({
                   <div className="avatar">
                     <div className="w-9 h-9 rounded-full ring-2 ring-primary/40 ring-offset-base-100 ring-offset-2">
                       <img
-                        src={user.imageUrl}
-                        alt={user.username || user.emailAddresses[0].emailAddress}
+                        src={user.imageUrl || "/avatar-placeholder.png"}
+                        alt={user.username || user.firstName || "User"}
                       />
                     </div>
                   </div>
@@ -135,7 +135,7 @@ export default function AppLayout({
                       {user.username || user.firstName || "Creator"}
                     </span>
                     <span className="text-[10px] text-base-content/60 truncate max-w-[120px]">
-                      {user.emailAddresses[0]?.emailAddress}
+                      {user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || ""}
                     </span>
                   </div>
                   <button
