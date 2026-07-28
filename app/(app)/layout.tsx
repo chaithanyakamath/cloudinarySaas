@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useClerk, useUser } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import {
   LogOutIcon,
   MenuIcon,
@@ -36,19 +36,26 @@ export default function AppLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentTheme, setCurrentTheme] = useState("dark");
   const pathname = usePathname();
   const router = useRouter();
-  const { signOut } = useClerk();
-  const { user } = useUser();
+  const { signOut } = useAuth();
+  const { isLoaded, user } = useUser();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogoClick = () => {
     router.push("/");
   };
 
   const handleSignOut = async () => {
-    await signOut();
+    if (signOut) {
+      await signOut();
+    }
   };
 
   const changeTheme = (theme: string) => {
@@ -120,7 +127,7 @@ export default function AppLayout({
               </div>
 
               {/* User Avatar & Details */}
-              {user && (
+              {mounted && isLoaded && user && (
                 <div className="flex items-center gap-3 pl-2 border-l border-base-content/10">
                   <div className="avatar">
                     <div className="w-9 h-9 rounded-full ring-2 ring-primary/40 ring-offset-base-100 ring-offset-2">
@@ -242,7 +249,7 @@ export default function AppLayout({
           </div>
 
           {/* User Sign Out Card at bottom of sidebar */}
-          {user && (
+          {mounted && isLoaded && user && (
             <div className="p-4 border-t border-base-300/50">
               <button
                 onClick={handleSignOut}
