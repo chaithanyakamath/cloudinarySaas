@@ -11,6 +11,7 @@ function VideoUpload() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -62,23 +63,57 @@ function VideoUpload() {
     }
 
     setIsUploading(true);
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("originalSize", file.size.toString());
+    setUploadProgress(0);
 
     try {
-      const response = await axios.post("/api/video-upload", formData);
-      if (response.status === 200) {
-        router.push("/");
+      // Step 1: Fetch upload signature params from server
+      const sigRes = await axios.get("/api/video-upload/signature");
+      const { timestamp, signature, apiKey, cloudName, folder } = sigRes.data;
+
+      // Step 2: Upload file directly to Cloudinary bypassing Vercel body limits
+      const cloudinaryFormData = new FormData();
+      cloudinaryFormData.append("file", file);
+      cloudinaryFormData.append("api_key", apiKey);
+      cloudinaryFormData.append("timestamp", timestamp.toString());
+      cloudinaryFormData.append("signature", signature);
+      cloudinaryFormData.append("folder", folder);
+
+      const cldRes = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,
+        cloudinaryFormData,
+        {
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setUploadProgress(percent);
+            }
+          },
+        }
+      );
+
+      const { public_id, duration, bytes } = cldRes.data;
+
+      // Step 3: Save video metadata to Prisma PostgreSQL database
+      const saveRes = await axios.post("/api/video-upload", {
+        publicId: public_id,
+        title,
+        description,
+        originalSize: file.size.toString(),
+        bytes,
+        duration: duration || 0,
+      });
+
+      if (saveRes.status === 200) {
+        router.push("/home");
       }
     } catch (err: any) {
       console.error("Video upload failed:", err);
-      const rawError = err?.response?.data?.error || err?.message || "Failed to upload video. Please try again.";
-      const serverErrorMessage = typeof rawError === "string" ? rawError : (rawError?.message || JSON.stringify(rawError));
-      setError(serverErrorMessage);
+      const rawError =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to upload video. Please try again.";
+      setError(typeof rawError === "string" ? rawError : JSON.stringify(rawError));
     } finally {
       setIsUploading(false);
     }
@@ -93,7 +128,7 @@ function VideoUpload() {
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight">Upload Video Asset</h1>
           <p className="text-sm text-base-content/70">
-            Upload video files (up to 100 MB) for automatic Cloudinary encoding and streaming.
+            Direct Cloudinary high-speed encoding and streaming (up to 100 MB).
           </p>
         </div>
       </div>
@@ -192,15 +227,19 @@ function VideoUpload() {
           </div>
         </div>
 
-        {/* Upload Button & Progress Indicator */}
+        {/* Upload Button & Real-time Progress Indicator */}
         <div className="space-y-3">
           {isUploading && (
             <div className="glass-card rounded-2xl p-4 space-y-2">
               <div className="flex justify-between text-xs font-bold text-primary">
-                <span>Uploading Video to Cloudinary...</span>
-                <span>Streaming...</span>
+                <span>Uploading directly to Cloudinary...</span>
+                <span>{uploadProgress}%</span>
               </div>
-              <progress className="progress progress-primary w-full h-3 rounded-full"></progress>
+              <progress
+                className="progress progress-primary w-full h-3 rounded-full transition-all duration-300"
+                value={uploadProgress}
+                max="100"
+              ></progress>
             </div>
           )}
 
@@ -212,7 +251,7 @@ function VideoUpload() {
             {isUploading ? (
               <span className="flex items-center gap-2">
                 <span className="loading loading-spinner loading-md"></span>
-                Processing Video Upload...
+                Uploading Video ({uploadProgress}%)...
               </span>
             ) : (
               <span className="flex items-center gap-2">
