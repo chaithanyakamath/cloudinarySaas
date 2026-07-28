@@ -11,12 +11,20 @@ import {
   Share2Icon,
   UploadIcon,
   ImageIcon,
+  Wand2,
+  Scissors,
+  Type,
+  Video,
 } from "lucide-react"; // icons
 
 const sidebarItems = [
-  { href: "/home", icon: LayoutDashboardIcon, label: "Home Page" },
+  { href: "/home", icon: LayoutDashboardIcon, label: "Videos Dashboard" },
   { href: "/social-share", icon: Share2Icon, label: "Social Share" },
   { href: "/video-upload", icon: UploadIcon, label: "Video Upload" },
+  { href: "/ai-background", icon: Scissors, label: "AI Background" },
+  { href: "/ai-editor", icon: Wand2, label: "AI Photo Studio" },
+  { href: "/watermark", icon: Type, label: "Watermark Creator" },
+  { href: "/video-studio", icon: Video, label: "Smart Video Studio" },
 ]; // array of sidebar items with href, icon and label
 
 export default function AppLayout({
@@ -61,8 +69,8 @@ export default function AppLayout({
             </div>
             <div className="flex-1">
               <Link href="/" onClick={handleLogoClick}>
-                <div className="btn btn-ghost normal-case text-2xl font-bold tracking-tight cursor-pointer">
-                  Cloudinary Showcase
+                <div className="btn btn-ghost normal-case text-2xl font-bold tracking-tight cursor-pointer flex items-center gap-2">
+                  <span className="text-primary">Cloudinary</span> AI SaaS Studio
                 </div>
               </Link>
             </div>
