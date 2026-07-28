@@ -76,8 +76,8 @@ function VideoUpload() {
       }
     } catch (err: any) {
       console.error("Video upload failed:", err);
-      const serverErrorMessage =
-        err?.response?.data?.error || err?.message || "Failed to upload video. Please try again.";
+      const rawError = err?.response?.data?.error || err?.message || "Failed to upload video. Please try again.";
+      const serverErrorMessage = typeof rawError === "string" ? rawError : (rawError?.message || JSON.stringify(rawError));
       setError(serverErrorMessage);
     } finally {
       setIsUploading(false);

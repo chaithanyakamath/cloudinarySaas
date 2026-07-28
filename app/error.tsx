@@ -15,6 +15,13 @@ export default function Error({
     console.error("Unhandled client error:", error);
   }, [error]);
 
+  const errorMessage =
+    typeof error === "string"
+      ? error
+      : typeof error?.message === "string"
+      ? error.message
+      : JSON.stringify(error) || "An unexpected error occurred.";
+
   return (
     <div className="min-h-screen bg-base-300 flex flex-col items-center justify-center p-4 text-center">
       <div className="glass-card rounded-3xl p-8 max-w-md w-full border border-error/30 space-y-4 shadow-2xl">
@@ -23,7 +30,7 @@ export default function Error({
         </div>
         <h1 className="text-2xl font-bold text-base-content">Application Notice</h1>
         <p className="text-xs text-error/90 font-mono bg-error/10 p-3 rounded-xl break-words">
-          {error?.message || "Client hydration update in progress. Please refresh."}
+          {errorMessage}
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">

@@ -20,12 +20,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang="en" data-theme="dark" className={outfit.variable}>
-        <body className="bg-base-300 text-base-content antialiased min-h-screen">
+    <html lang="en" data-theme="dark" className={outfit.variable}>
+      <body className="bg-base-300 text-base-content antialiased min-h-screen">
+        <ClerkProvider>
           {children}
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }
