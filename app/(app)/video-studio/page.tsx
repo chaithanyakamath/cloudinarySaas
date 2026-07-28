@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getCldVideoUrl } from "next-cloudinary";
 import axios from "axios";
-import { Video as VideoIcon, Download, Film, Sparkles, RefreshCw } from "lucide-react";
+import { Video as VideoIcon, Download, Film, Sparkles, RefreshCw, Loader2 } from "lucide-react";
 import { Video } from "@/types";
 
 const studioModes = [
@@ -42,8 +42,7 @@ const studioModes = [
         src: publicId,
         width: 480,
         height: 270,
-        format: "gif",
-        rawTransformations: ["fl_animated", "e_loop"],
+        rawTransformations: ["f_gif", "fl_animated", "e_loop"],
       }),
     isGif: true,
   },
@@ -66,7 +65,11 @@ export default function VideoStudioPage() {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [selectedMode, setSelectedMode] = useState("shorts");
   const [loading, setLoading] = useState(true);
+  const [isVideoLoading, setIsVideoLoading] = useState(true);
   const [videoError, setVideoError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     fetchVideos();
@@ -89,6 +92,20 @@ export default function VideoStudioPage() {
 
   const activeModeObj = studioModes.find((m) => m.id === selectedMode) || studioModes[0];
   const transformedUrl = selectedVideo ? activeModeObj.getConfig(selectedVideo.publicId) : "";
+
+  // Reset loading & error states when selection changes or retry is clicked
+  useEffect(() => {
+    if (transformedUrl) {
+      setIsVideoLoading(true);
+      setVideoError(false);
+    }
+  }, [selectedVideo, selectedMode, retryKey]);
+
+  const handleRetry = () => {
+    setVideoError(false);
+    setIsVideoLoading(true);
+    setRetryKey((prev) => prev + 1);
+  };
 
   const handleDownload = () => {
     if (!transformedUrl || !selectedVideo) return;
@@ -143,7 +160,6 @@ export default function VideoStudioPage() {
                     const found = videos.find((v) => v.id === e.target.value);
                     if (found) {
                       setSelectedVideo(found);
-                      setVideoError(false);
                     }
                   }}
                   className="select select-bordered w-full"
@@ -173,7 +189,6 @@ export default function VideoStudioPage() {
                       key={mode.id}
                       onClick={() => {
                         setSelectedMode(mode.id);
-                        setVideoError(false);
                       }}
                       className={`p-3 rounded-xl border cursor-pointer transition-all ${
                         selectedMode === mode.id
@@ -207,32 +222,68 @@ export default function VideoStudioPage() {
                 </div>
               ) : (
                 <div className="relative flex justify-center items-center rounded-2xl overflow-hidden bg-base-300 min-h-[380px] p-4">
-                  {videoError ? (
-                    <div className="flex flex-col items-center justify-center text-center p-6 bg-base-200 rounded-lg">
-                      <p className="text-error font-semibold">Video preview transformation loading...</p>
+                  {/* Loading Overlay */}
+                  {isVideoLoading && !videoError && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-base-100/70 z-20 backdrop-blur-sm">
+                      <Loader2 className="w-10 h-10 text-primary animate-spin mb-2" />
+                      <p className="text-sm font-semibold text-primary">Processing Cloudinary transformation...</p>
+                      <p className="text-xs text-base-content/60 mt-1">Preparing AI gravity crop & stream</p>
+                    </div>
+                  )}
+
+                  {/* Error / Retry Overlay */}
+                  {videoError && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-base-100/90 z-30">
+                      <p className="text-error font-semibold mb-1">Transformation processing on Cloudinary...</p>
+                      <p className="text-xs text-base-content/60 mb-4 max-w-xs">
+                        Cloudinary is generating the AI crop in the background. Click retry to load the preview.
+                      </p>
                       <button
-                        onClick={() => setVideoError(false)}
-                        className="btn btn-outline btn-sm btn-primary mt-3"
+                        onClick={handleRetry}
+                        className="btn btn-sm btn-primary"
                       >
                         <RefreshCw className="w-4 h-4 mr-1" /> Retry Preview
                       </button>
                     </div>
-                  ) : activeModeObj.isGif ? (
+                  )}
+
+                  {activeModeObj.isGif ? (
                     <img
-                      src={transformedUrl}
+                      key={`${transformedUrl}-${retryKey}`}
+                      src={`${transformedUrl}${transformedUrl.includes('?') ? '&' : '?'}t=${retryKey}`}
                       alt="Animated GIF"
-                      onError={() => setVideoError(true)}
+                      onLoad={() => {
+                        setIsVideoLoading(false);
+                        setVideoError(false);
+                      }}
+                      onError={() => {
+                        setIsVideoLoading(false);
+                        setVideoError(true);
+                      }}
                       className="max-h-[480px] w-auto object-contain rounded-lg shadow-lg"
                     />
                   ) : (
                     <video
-                      key={transformedUrl}
-                      src={transformedUrl}
+                      key={`${transformedUrl}-${retryKey}`}
+                      ref={videoRef}
+                      src={`${transformedUrl}${transformedUrl.includes('?') ? '&' : '?'}t=${retryKey}`}
                       controls
                       autoPlay
                       muted
                       loop
-                      onError={() => setVideoError(true)}
+                      playsInline
+                      onLoadedData={() => {
+                        setIsVideoLoading(false);
+                        setVideoError(false);
+                      }}
+                      onCanPlay={() => {
+                        setIsVideoLoading(false);
+                        setVideoError(false);
+                      }}
+                      onError={() => {
+                        setIsVideoLoading(false);
+                        setVideoError(true);
+                      }}
                       className="max-h-[480px] w-auto object-contain rounded-lg shadow-lg"
                     />
                   )}

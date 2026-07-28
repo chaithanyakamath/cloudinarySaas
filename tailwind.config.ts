@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-    darkMode: "class",
+  darkMode: "class",
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,6 +9,15 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      colors: {
+        brand: {
+          50: '#f0f3ff',
+          100: '#e0e7ff',
+          500: '#6366f1',
+          600: '#4f46e5',
+          700: '#4338ca',
+        }
+      },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-conic":
@@ -16,9 +25,10 @@ const config: Config = {
       },
     },
   },
-  plugins: [ require("daisyui")],
+  plugins: [require("daisyui")],
   daisyui: {
-      themes: ["dark"]
+    themes: ["dark", "night", "dim", "synthwave", "black"],
+    darkTheme: "dark",
   }
 };
 export default config;
