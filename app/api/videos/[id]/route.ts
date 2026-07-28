@@ -32,6 +32,11 @@ export async function DELETE(
       return NextResponse.json({ error: "Video not found" }, { status: 404 });
     }
 
+    // Verify account ownership (or allow if video has default empty string from migration)
+    if (video.userId && video.userId !== userId) {
+      return NextResponse.json({ error: "Forbidden: You do not own this video" }, { status: 403 });
+    }
+
     // Delete video asset from Cloudinary
     if (video.publicId) {
       try {
