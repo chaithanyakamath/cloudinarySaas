@@ -6,7 +6,7 @@ import VideoCard from "@/components/VideoCard";
 import { Video } from "@/types";
 import { Search, Film, HardDrive, Sparkles, Plus, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { filesize } from "filesize";
+import { formatBytes } from "@/lib/utils";
 
 function Home() {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -129,7 +129,7 @@ function Home() {
               </div>
               <div>
                 <div className="text-xl font-extrabold text-emerald-400">
-                  {filesize(totalSavedBytes)}
+                  {formatBytes(totalSavedBytes)}
                 </div>
                 <div className="text-[11px] text-base-content/60 font-semibold uppercase">Storage Saved</div>
               </div>

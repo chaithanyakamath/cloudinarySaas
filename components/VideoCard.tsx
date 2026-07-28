@@ -3,7 +3,7 @@ import { getCldImageUrl, getCldVideoUrl } from "next-cloudinary";
 import { Download, Clock, FileDown, FileUp, Play, Sparkles, Trash2, Loader2 } from "lucide-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { filesize } from "filesize";
+import { formatBytes } from "@/lib/utils";
 import { Video } from "@/types";
 
 dayjs.extend(relativeTime);
@@ -51,7 +51,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDownload, onDelete }) =>
   }, []);
 
   const formatSize = useCallback((size: number) => {
-    return filesize(size);
+    return formatBytes(size);
   }, []);
 
   const formatDuration = useCallback((seconds: number) => {

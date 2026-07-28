@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { Upload, Film, FileVideo, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react";
-import { filesize } from "filesize";
+import { formatBytes } from "@/lib/utils";
 
 function VideoUpload() {
   const [file, setFile] = useState<File | null>(null);
@@ -139,7 +139,7 @@ function VideoUpload() {
                 </div>
                 <p className="font-bold text-base text-emerald-400">{file.name}</p>
                 <div className="flex items-center gap-3 mt-1 text-xs font-semibold text-base-content/60">
-                  <span>Size: {filesize(file.size)}</span>
+                  <span>Size: {formatBytes(file.size)}</span>
                   <span>•</span>
                   <span>Type: {file.type || "video/mp4"}</span>
                 </div>
