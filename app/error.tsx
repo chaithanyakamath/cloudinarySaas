@@ -15,12 +15,20 @@ export default function Error({
     console.error("Unhandled client error:", error);
   }, [error]);
 
-  const errorMessage =
-    typeof error === "string"
-      ? error
-      : typeof error?.message === "string"
-      ? error.message
-      : JSON.stringify(error) || "An unexpected error occurred.";
+  let displayErrorString = "An unexpected error occurred.";
+  if (typeof error === "string") {
+    displayErrorString = error;
+  } else if (error && typeof error === "object") {
+    if (typeof error.message === "string") {
+      displayErrorString = error.message;
+    } else {
+      try {
+        displayErrorString = JSON.stringify(error);
+      } catch {
+        displayErrorString = "An error occurred in the application.";
+      }
+    }
+  }
 
   return (
     <div className="min-h-screen bg-base-300 flex flex-col items-center justify-center p-4 text-center">
@@ -29,9 +37,9 @@ export default function Error({
           <AlertCircle className="w-8 h-8" />
         </div>
         <h1 className="text-2xl font-bold text-base-content">Application Notice</h1>
-        <p className="text-xs text-error/90 font-mono bg-error/10 p-3 rounded-xl break-words">
-          {errorMessage}
-        </p>
+        <div className="text-xs text-error/90 font-mono bg-error/10 p-3 rounded-xl break-words">
+          {String(displayErrorString)}
+        </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <button
