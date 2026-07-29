@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { getCldVideoUrl } from "next-cloudinary";
-import axios from "axios";
-import { Video as VideoIcon, Download, Film, Sparkles, RefreshCw, Loader2 } from "lucide-react";
-import { Video } from "@/types";
+import React, { useState, useEffect, useRef } from "react"; // react hooks for state management and lifecycle methods
+import { getCldVideoUrl } from "next-cloudinary"; // cloudinary hook for optimized video rendering
+import axios from "axios"; // axios for making HTTP requests to the backend API
+import { Video as VideoIcon, Download, Film, Sparkles, RefreshCw, Loader2 } from "lucide-react"; // lucide-react icons for UI elements
+import { Video } from "@/types"; // TypeScript type definition for the Video object, imported from a local types file
+
 
 const studioModes = [
   {
@@ -58,30 +59,32 @@ const studioModes = [
         rawTransformations: ["e_preview:duration_10:max_seg_5:min_seg_dur_1"],
       }),
   },
-];
+]; // array of studio modes with their corresponding Cloudinary transformations and configurations for video processing
 
 export default function VideoStudioPage() {
-  const [videos, setVideos] = useState<Video[]>([]);
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
-  const [selectedMode, setSelectedMode] = useState("shorts");
-  const [loading, setLoading] = useState(true);
-  const [isVideoLoading, setIsVideoLoading] = useState(true);
-  const [videoError, setVideoError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
+  const [videos, setVideos] = useState<Video[]>([]); // state to hold the list of videos fetched from the backend API
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null); // state to hold the currently selected video for transformation
+  const [selectedMode, setSelectedMode] = useState("shorts"); // state to hold the currently selected studio mode for video transformation
+  const [loading, setLoading] = useState(true); // state to indicate if the "video list" is currently being fetched from the backend API
+  const [isVideoLoading, setIsVideoLoading] = useState(true); // state to indicate if the "video" is currently loading
+  const [videoError, setVideoError] = useState(false); // state to indicate if there was an error loading the video, used to show retry option
+  const [retryKey, setRetryKey] = useState(0); // state to force re-rendering of the video element when retrying to load the video after an error
 
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null); // ref to the video element to access its properties for download and playback control
 
   useEffect(() => {
     fetchVideos();
-  }, []);
+  }, []); // useEffect hook to fetch the list of videos from the backend API when the component mounts
 
   const fetchVideos = async () => {
     try {
-      setLoading(true);
-      const res = await axios.get("/api/videos");
-      if (Array.isArray(res.data) && res.data.length > 0) {
-        setVideos(res.data);
-        setSelectedVideo(res.data[0]);
+      setLoading(true); // "video list" is being fetched, set loading state to true
+      const res = await axios.get("/api/videos"); // fetch the list of videos from the backend API endpoint "/api/videos"
+
+      // if the response data is an array and has at least one video
+      if (Array.isArray(res.data) && res.data.length > 0) { 
+        setVideos(res.data); // "video list" fetched successfully, update the state with the fetched videos
+        setSelectedVideo(res.data[0]); // get the first video from the list
       }
     } catch (err) {
       console.error("Failed to fetch videos", err);
@@ -90,34 +93,36 @@ export default function VideoStudioPage() {
     }
   };
 
-  const activeModeObj = studioModes.find((m) => m.id === selectedMode) || studioModes[0];
-  const transformedUrl = selectedVideo ? activeModeObj.getConfig(selectedVideo.publicId) : "";
+  const activeModeObj = studioModes.find((m) => m.id === selectedMode) || studioModes[0]; //selected modes
+  const transformedUrl = selectedVideo ? activeModeObj.getConfig(selectedVideo.publicId) : ""; //transformed video url
 
   // Reset loading & error states when selection changes or retry is clicked
   useEffect(() => {
+    // if a video is selected and a transformed URL is available
     if (transformedUrl) {
-      setIsVideoLoading(true);
-      setVideoError(false);
+      setIsVideoLoading(true); // video is loading, set loading state to true
+      setVideoError(false); // reset any previous video error state to false
     }
-  }, [selectedVideo, selectedMode, retryKey]);
+  },
+  [selectedVideo, selectedMode, retryKey]); // dependencies for the useEffect hook, which will trigger the effect when any of these values change
 
   const handleRetry = () => {
-    setVideoError(false);
-    setIsVideoLoading(true);
-    setRetryKey((prev) => prev + 1);
-  };
+    setVideoError(false); // reset the video error state to false when retrying to load the video
+    setIsVideoLoading(true); // set the video loading state to true when retrying to load the video
+    setRetryKey((prev) => prev + 1); // increment the retryKey state to force re-rendering of the video element
+  }; // manage retry for loading error
 
   const handleDownload = () => {
-    if (!transformedUrl || !selectedVideo) return;
+    if (!transformedUrl || !selectedVideo) return; //none
 
-    const extension = activeModeObj.isGif ? "gif" : "mp4";
-    const link = document.createElement("a");
-    link.href = transformedUrl;
-    link.setAttribute("download", `${selectedVideo.title}_${selectedMode}.${extension}`);
-    link.setAttribute("target", "_blank");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const extension = activeModeObj.isGif ? "gif" : "mp4"; //gif or mp4
+    const link = document.createElement("a"); // new anchor element to trigger the download
+    link.href = transformedUrl; // assign the transformed url to the anchor's href attribute
+    link.setAttribute("download", `${selectedVideo.title}_${selectedMode}.${extension}`); // set the download attribute with a filename based on the selected video title and mode
+    link.setAttribute("target", "_blank"); // set the target attribute to "_blank" to open the download in a new tab
+    document.body.appendChild(link); // append the anchor element to the document body to make it part of the DOM
+    link.click(); // programmatically trigger a click event on the anchor element to initiate the download
+    document.body.removeChild(link);// remove the anchor element from the document body after the download is initiated to clean up the DOM
   };
 
   return (
@@ -303,5 +308,5 @@ export default function VideoStudioPage() {
         </div>
       </div>
     </div>
-  );
+  ); // frontend UI for AI video studio, allowing users to select a video, choose a transformation mode (like Shorts/Reels, GIF, or highlights), view a live preview of the transformed video, and download the edited video or GIF.
 }

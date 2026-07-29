@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { CldImage } from "next-cloudinary";
-import { Scissors, Download, Sparkles, Image as ImageIcon, Check } from "lucide-react";
+import React, { useState, useRef } from "react"; // react hooks
+import { CldImage } from "next-cloudinary"; // cloudinary hooks
+import { Scissors, Download, Sparkles, Image as ImageIcon, Check } from "lucide-react"; // lucide icons
 
 const backdropOptions = [
   { id: "transparent", label: "Transparent (PNG)", bgClass: "bg-checkered", transformation: ["e_background_removal"], format: "png" },
@@ -13,45 +13,46 @@ const backdropOptions = [
   { id: "emerald", label: "Emerald Green", bgClass: "bg-emerald-600", transformation: ["e_background_removal", "b_rgb:059669"] },
   { id: "sunset", label: "Sunset Warmth", bgClass: "bg-amber-600", transformation: ["e_background_removal", "b_rgb:d97706"] },
   { id: "vintage", label: "Vintage Sepia", bgClass: "bg-yellow-950", transformation: ["e_sepia"] },
-];
+]; // featured backdrop options for AI background removal and transformation
 
 export default function AIBackgroundPage() {
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [selectedBackdrop, setSelectedBackdrop] = useState("transparent");
-  const [isUploading, setIsUploading] = useState(false);
-  const [isTransforming, setIsTransforming] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null); // state to hold the uploaded image's public ID from Cloudinary
+  const [selectedBackdrop, setSelectedBackdrop] = useState("transparent"); // state to hold the currently selected backdrop option
+  const [isUploading, setIsUploading] = useState(false); // state to indicate if an image is currently being uploaded
+  const [isTransforming, setIsTransforming] = useState(false); // state to indicate if the AI transformation is currently being applied
+  const [error, setError] = useState<string | null>(null); // state to hold any error messages during upload or transformation
 
-  const imageRef = useRef<HTMLImageElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null); // ref to the img
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const file = event.target.files?.[0]; // get the first file from the file input
     if (!file) return;
 
-    setError(null);
-    setIsUploading(true);
+    setError(null); // no error initially
+    setIsUploading(true); // uploading first file -> so true
 
-    const formData = new FormData();
-    formData.append("file", file);
+    const formData = new FormData(); // formdata obj to hold file
+    formData.append("file", file); // append the file to the formdata obj
 
     try {
       const response = await fetch("/api/image-upload", {
         method: "POST",
         body: formData,
-      });
+      }); //formdata is sent to the server to upload it into cloudinary
 
       if (!response.ok) {
         throw new Error("Failed to upload image.");
-      }
+      } // if the response is not ok, throw an error
 
-      const data = await response.json();
-      setUploadedImage(data.publicId);
-      setIsTransforming(true);
-    } catch (err: any) {
+      const data = await response.json(); // uploaded img id
+      setUploadedImage(data.publicId); // set the uploaded image's public ID in state
+      setIsTransforming(true); // there's img to be transformed -> so true
+    } 
+    catch (err: any) {
       console.error(err);
       setError(err?.message || "Upload failed. Please try again.");
     } finally {
-      setIsUploading(false);
+      setIsUploading(false); // uploading is done -> so false
     }
   };
 
@@ -76,15 +77,15 @@ export default function AIBackgroundPage() {
       .catch((err) => {
         console.error("Download failed", err);
       });
-  };
+  }; // same code to handle download of the transformed image, creating a temporary link to trigger the download
 
-  const activeOption = backdropOptions.find((opt) => opt.id === selectedBackdrop) || backdropOptions[0];
+  const activeOption = backdropOptions.find((opt) => opt.id === selectedBackdrop) || backdropOptions[0]; // find the currently selected backdrop option, default to the first option if not found
 
   return (
     <div className="container mx-auto p-4 max-w-5xl">
       <div className="flex items-center gap-3 mb-6">
         <div className="p-3 bg-primary/10 rounded-xl text-primary">
-          <Scissors className="w-8 h-8" />
+          <Scissors className="w-8 h-8" /> //
         </div>
         <div>
           <h1 className="text-3xl font-bold">AI Background Removal & Backdrop Studio</h1>
@@ -207,5 +208,5 @@ export default function AIBackgroundPage() {
         </div>
       </div>
     </div>
-  );
+  ); // frontend UI for AI background removal and backdrop transformation, including file upload, backdrop selection, live preview, and download functionality
 }

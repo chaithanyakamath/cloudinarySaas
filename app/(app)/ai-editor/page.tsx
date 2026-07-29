@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { CldImage } from "next-cloudinary";
-import { Wand2, Download, Image as ImageIcon, Sliders, Check } from "lucide-react";
+import React, { useState, useRef } from "react"; // react hooks for state management
+import { CldImage } from "next-cloudinary"; // cloudinary hook for optimized image rendering
+import { Wand2, Download, Image as ImageIcon, Sliders, Check } from "lucide-react"; // lucide-react icons for UI elements
 
 const filterPresets = [
   { id: "original", label: "Original", transformations: [] },
@@ -14,16 +14,16 @@ const filterPresets = [
   { id: "noir", label: "Black & White Noir", transformations: ["e_grayscale"] },
   { id: "vignette", label: "Vignette Focus", transformations: ["e_vignette:50"] },
   { id: "vectorize", label: "Vector Art", transformations: ["e_vectorize:colors:5"] },
-];
+]; // array of filter presets with their corresponding Cloudinary transformations
 
 export default function AIEditorPage() {
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [selectedFilter, setSelectedFilter] = useState("enhance");
-  const [isUploading, setIsUploading] = useState(false);
-  const [isTransforming, setIsTransforming] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null); // state to hold the uploaded image's public ID
+  const [selectedFilter, setSelectedFilter] = useState("enhance"); // state to hold the currently selected filter preset
+  const [isUploading, setIsUploading] = useState(false); // state to indicate if an image is currently being uploaded
+  const [isTransforming, setIsTransforming] = useState(false); // state to indicate if the image is currently being transformed with the selected filter
+  const [error, setError] = useState<string | null>(null); // state to hold any error messages related to file upload or transformation
 
-  const imageRef = useRef<HTMLImageElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null); // ref to the img element to access its properties for download
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -54,7 +54,7 @@ export default function AIEditorPage() {
     } finally {
       setIsUploading(false);
     }
-  };
+  }; // handleFileUpload function handles the file input change event, uploads the selected image to the server, and updates the state accordingly.
 
   const handleDownload = () => {
     if (!imageRef.current) return;
@@ -74,9 +74,9 @@ export default function AIEditorPage() {
       .catch((err) => {
         console.error("Download failed", err);
       });
-  };
+  }; // same bunch of code to handle download of the transformed image, creating a temporary link to trigger the download
 
-  const activeFilterObj = filterPresets.find((f) => f.id === selectedFilter) || filterPresets[0];
+  const activeFilterObj = filterPresets.find((f) => f.id === selectedFilter) || filterPresets[0]; // find the currently selected filter preset object, default to the first preset if not found
 
   return (
     <div className="container mx-auto p-4 max-w-5xl">
@@ -204,5 +204,5 @@ export default function AIEditorPage() {
         </div>
       </div>
     </div>
-  );
+  ); // frontend UI for AI photo editor, allowing users to upload an image, select from various AI filter presets, view a live transformation preview, and download the edited image.
 }

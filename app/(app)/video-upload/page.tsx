@@ -1,21 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
-import axios from "axios";
-import { useRouter } from "next/navigation";
-import { Upload, Film, FileVideo, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react";
-import { formatBytes } from "@/lib/utils";
+import React, { useState } from "react"; // react hook for managing state in functional components
+import axios from "axios"; // hook for making HTTP requests to the backend API
+import { useRouter } from "next/navigation"; // hook for programmatic navigation in Next.js applications
+import { Upload, Film, FileVideo, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react"; //lucide icon hooks for icons
+import { formatBytes } from "@/lib/utils"; // utility function to format bytes into a human-readable string
 
 function VideoUpload() {
-  const [file, setFile] = useState<File | null>(null);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [file, setFile] = useState<File | null>(null); // state to store the selected video file
+  const [title, setTitle] = useState(""); // state to store the video title
+  const [description, setDescription] = useState(""); // state to store the video description
+  const [isUploading, setIsUploading] = useState(false); // state to track upload status
+  const [uploadProgress, setUploadProgress] = useState(0); // state to track upload progress
+  const [error, setError] = useState<string | null>(null); // state to store any upload errors
+  const [isDragging, setIsDragging] = useState(false); // state to track drag-and-drop status
 
-  const router = useRouter();
+  const router = useRouter(); 
 
   // max file size of 100 MB
   const MAX_FILE_SIZE = 100 * 1024 * 1024;
@@ -25,7 +25,7 @@ function VideoUpload() {
     if (!selectedFile) {
       setFile(null);
       return;
-    }
+    } // no file selected, make setfile to null
 
     if (selectedFile.size > MAX_FILE_SIZE) {
       setError(
@@ -33,65 +33,68 @@ function VideoUpload() {
       );
       setFile(null);
       return;
-    }
+    } // file size exceeded
 
     setFile(selectedFile);
     if (!title) {
       // Auto-populate title from filename
-      const nameWithoutExt = selectedFile.name.substring(0, selectedFile.name.lastIndexOf(".")) || selectedFile.name;
-      setTitle(nameWithoutExt);
+      const nameWithoutExt = selectedFile.name.substring(0, selectedFile.name.lastIndexOf(".")) || selectedFile.name; // automatic title capture from filename if not given
+      setTitle(nameWithoutExt); //set title to filename 
     }
-  };
+  }; // handle file selection and validation
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const droppedFile = e.dataTransfer.files?.[0];
+    e.preventDefault(); // prevent default behavior for drag-and-drop events 
+    setIsDragging(false); // whn drag n drop is done, set dragging to false
+    const droppedFile = e.dataTransfer.files?.[0]; // get first dropped file
+    // Validate file type
     if (droppedFile && droppedFile.type.startsWith("video/")) {
-      handleFileChange(droppedFile);
+      handleFileChange(droppedFile);// validate and handle the dropped file
     } else {
       setError("Please select a valid video file.");
     }
-  };
+  }; // handle file drop event and validate the dropped file via (handleFileChange)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+    e.preventDefault(); // prevent default browser form submission behavior
+    setError(null); // reset any previous error messages
     if (!file) {
       setError("Please choose a video file to upload.");
       return;
     }
 
-    setIsUploading(true);
-    setUploadProgress(0);
+    setIsUploading(true); // set uploading state to true
+    setUploadProgress(0); // reset upload progress to 0
 
     try {
       // Step 1: Fetch upload signature params from server
-      const sigRes = await axios.get("/api/video-upload/signature");
-      const { timestamp, signature, apiKey, cloudName, folder } = sigRes.data;
+      const sigRes = await axios.get("/api/video-upload/signature"); // (frontend --> backend) request to get signature params for direct upload to Cloudinary
+      const { timestamp, signature, apiKey, cloudName, folder } = sigRes.data; //data from signature response
 
       // Step 2: Upload file directly to Cloudinary bypassing Vercel body limits
-      const cloudinaryFormData = new FormData();
+      const cloudinaryFormData = new FormData(); // new object to hold form data for Cloudinary upload
       cloudinaryFormData.append("file", file);
       cloudinaryFormData.append("api_key", apiKey);
       cloudinaryFormData.append("timestamp", timestamp.toString());
       cloudinaryFormData.append("signature", signature);
       cloudinaryFormData.append("folder", folder);
+      //append the file and signature params to the form data for Cloudinary upload
 
       const cldRes = await axios.post(
-        `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,
-        cloudinaryFormData,
+        `https://api.cloudinary.com/v1_1/${cloudName}/video/upload` //cloudinary upload endpoint for video uploads
+        ,cloudinaryFormData, // data to be sent in the request body
         {
           onUploadProgress: (progressEvent) => {
+            // Calculate and update upload progress percentage
             if (progressEvent.total) {
               const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
               setUploadProgress(percent);
             }
           },
         }
-      );
+      ); // post the data to cloudinary and track upload progress
 
-      const { public_id, duration, bytes } = cldRes.data;
+      const { public_id, duration, bytes } = cldRes.data; // id, duration, and size of the uploaded video returned from uploaded data to cloud
 
       // Step 3: Save video metadata to Prisma PostgreSQL database
       const saveRes = await axios.post("/api/video-upload", {
@@ -101,11 +104,11 @@ function VideoUpload() {
         originalSize: file.size.toString(),
         bytes,
         duration: duration || 0,
-      });
+      }); // save the video metadata to the database via backend API
 
       if (saveRes.status === 200) {
         router.push("/home");
-      }
+      } // back to home page after successful upload and save
     } catch (err: any) {
       console.error("Video upload failed:", err);
       const rawError =
@@ -262,7 +265,7 @@ function VideoUpload() {
         </div>
       </form>
     </div>
-  );
+  ); // frontend UI for AI video upload, allowing users to select a video file, input title and description, and upload the video directly to Cloudinary with real-time progress feedback.
 }
 
 export default VideoUpload;

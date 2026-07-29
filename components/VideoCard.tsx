@@ -1,24 +1,24 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { getCldImageUrl, getCldVideoUrl } from "next-cloudinary";
-import { Download, Clock, FileDown, FileUp, Play, Sparkles, Trash2, Loader2 } from "lucide-react";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-import { formatBytes } from "@/lib/utils";
-import { Video } from "@/types";
+import React, { useState, useEffect, useCallback } from "react"; // react hooks
+import { getCldImageUrl, getCldVideoUrl } from "next-cloudinary";  //image and video url generation from next-cloudinary
+import { Download, Clock, FileDown, FileUp, Play, Sparkles, Trash2, Loader2 } from "lucide-react"; // icons from lucide-react
+import dayjs from "dayjs"; // ui library for date formatting
+import relativeTime from "dayjs/plugin/relativeTime"; // plugin for dayjs to format relative time
+import { formatBytes } from "@/lib/utils"; // utility function to format bytes into human-readable format
+import { Video } from "@/types"; // video type definition from types file
 
-dayjs.extend(relativeTime);
+dayjs.extend(relativeTime); //dayjs - relativeTime(plugin)
 
 interface VideoCardProps {
   video: Video;
-  onDownload: (url: string, title: string) => void;
-  onDelete?: (id: string) => Promise<void>;
-}
+  onDownload: (url: string, title: string) => void; // download func with these params
+  onDelete?: (id: string) => Promise<void>; // delete func with id
+} 
 
 const VideoCard: React.FC<VideoCardProps> = ({ video, onDownload, onDelete }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const [previewError, setPreviewError] = useState(false);
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isHovered, setIsHovered] = useState(false); // state to manage hovering
+  const [previewError, setPreviewError] = useState(false); // state to manage preview error if so
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false); // state to manage deleting(confiming)
+  const [isDeleting, setIsDeleting] = useState(false); // state to manage delete(real)
 
   const getThumbnailUrl = useCallback((publicId: string) => {
     return getCldImageUrl({
@@ -31,7 +31,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDownload, onDelete }) =>
       quality: "auto",
       assetType: "video",
     });
-  }, []);
+  }, []); // fetch thumbnail url using publicId from cloudinary
 
   const getFullVideoUrl = useCallback((publicId: string) => {
     return getCldVideoUrl({
@@ -39,7 +39,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDownload, onDelete }) =>
       width: 1920,
       height: 1080,
     });
-  }, []);
+  }, []); // fetch fullvideo url using publicId from cloudinary
 
   const getPreviewVideoUrl = useCallback((publicId: string) => {
     return getCldVideoUrl({
@@ -48,17 +48,17 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDownload, onDelete }) =>
       height: 250,
       rawTransformations: ["e_preview:duration_15:max_seg_9:min_seg_dur_1"],
     });
-  }, []);
+  }, []);// fetch previewvideo url using publicId from cloudinary
 
   const formatSize = useCallback((size: number) => {
     return formatBytes(size);
-  }, []);
+  }, []); // formating size
 
   const formatDuration = useCallback((seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.round(seconds % 60);
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-  }, []);
+  }, []); // format duration
 
   const originalBytes = Number(video.originalSize) || 0;
   const rawCompressedBytes = Number(video.compressedSize) || 0;
@@ -88,7 +88,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDownload, onDelete }) =>
       setIsDeleting(false);
       setIsConfirmingDelete(false);
     }
-  };
+  }; // manage deleting
 
   return (
     <div

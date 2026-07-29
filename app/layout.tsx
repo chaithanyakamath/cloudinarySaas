@@ -14,11 +14,9 @@ export const metadata: Metadata = {
   description: "AI-Powered Video & Image Transformation SaaS Platform",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout(
+  {children,}: Readonly<{children: React.ReactNode;}>)
+ {
   return (
     <html lang="en" data-theme="dark" className={outfit.variable}>
       <body className="bg-base-300 text-base-content antialiased min-h-screen">
