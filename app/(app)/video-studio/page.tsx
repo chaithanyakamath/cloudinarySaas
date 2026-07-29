@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react"; // react hooks for state management and lifecycle methods
-import { getCldVideoUrl } from "next-cloudinary"; // cloudinary hook for optimized video rendering
-import axios from "axios"; // axios for making HTTP requests to the backend API
-import { Video as VideoIcon, Download, Film, Sparkles, RefreshCw, Loader2 } from "lucide-react"; // lucide-react icons for UI elements
-import { Video } from "@/types"; // TypeScript type definition for the Video object, imported from a local types file
-
+import React, { useState, useEffect, useRef } from "react";
+import { getCldVideoUrl } from "next-cloudinary";
+import axios from "axios";
+import { Video as VideoIcon, Download, Film, Sparkles, RefreshCw, Loader2, PlayCircle } from "lucide-react";
+import { Video } from "@/types";
 
 const studioModes = [
   {
@@ -56,35 +55,34 @@ const studioModes = [
         src: publicId,
         width: 854,
         height: 480,
-        rawTransformations: ["e_preview:duration_10:max_seg_5:min_seg_dur_1"],
+        rawTransformations: ["e_preview:duration_10:max_seg_5"],
       }),
   },
-]; // array of studio modes with their corresponding Cloudinary transformations and configurations for video processing
+];
 
 export default function VideoStudioPage() {
-  const [videos, setVideos] = useState<Video[]>([]); // state to hold the list of videos fetched from the backend API
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null); // state to hold the currently selected video for transformation
-  const [selectedMode, setSelectedMode] = useState("shorts"); // state to hold the currently selected studio mode for video transformation
-  const [loading, setLoading] = useState(true); // state to indicate if the "video list" is currently being fetched from the backend API
-  const [isVideoLoading, setIsVideoLoading] = useState(true); // state to indicate if the "video" is currently loading
-  const [videoError, setVideoError] = useState(false); // state to indicate if there was an error loading the video, used to show retry option
-  const [retryKey, setRetryKey] = useState(0); // state to force re-rendering of the video element when retrying to load the video after an error
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [selectedMode, setSelectedMode] = useState("shorts");
+  const [loading, setLoading] = useState(true);
+  const [isVideoLoading, setIsVideoLoading] = useState(true);
+  const [videoError, setVideoError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
 
-  const videoRef = useRef<HTMLVideoElement>(null); // ref to the video element to access its properties for download and playback control
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     fetchVideos();
-  }, []); // useEffect hook to fetch the list of videos from the backend API when the component mounts
+  }, []);
 
   const fetchVideos = async () => {
     try {
-      setLoading(true); // "video list" is being fetched, set loading state to true
-      const res = await axios.get("/api/videos"); // fetch the list of videos from the backend API endpoint "/api/videos"
-
-      // if the response data is an array and has at least one video
-      if (Array.isArray(res.data) && res.data.length > 0) { 
-        setVideos(res.data); // "video list" fetched successfully, update the state with the fetched videos
-        setSelectedVideo(res.data[0]); // get the first video from the list
+      setLoading(true);
+      const res = await axios.get("/api/videos");
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        setVideos(res.data);
+        setSelectedVideo(res.data[0]);
       }
     } catch (err) {
       console.error("Failed to fetch videos", err);
@@ -93,36 +91,50 @@ export default function VideoStudioPage() {
     }
   };
 
-  const activeModeObj = studioModes.find((m) => m.id === selectedMode) || studioModes[0]; //selected modes
-  const transformedUrl = selectedVideo ? activeModeObj.getConfig(selectedVideo.publicId) : ""; //transformed video url
+  const activeModeObj = studioModes.find((m) => m.id === selectedMode) || studioModes[0];
+  const transformedUrl = selectedVideo ? activeModeObj.getConfig(selectedVideo.publicId) : "";
 
   // Reset loading & error states when selection changes or retry is clicked
   useEffect(() => {
-    // if a video is selected and a transformed URL is available
     if (transformedUrl) {
-      setIsVideoLoading(true); // video is loading, set loading state to true
-      setVideoError(false); // reset any previous video error state to false
+      setIsVideoLoading(true);
+      setVideoError(false);
+      setRetryCount(0);
     }
-  },
-  [selectedVideo, selectedMode, retryKey]); // dependencies for the useEffect hook, which will trigger the effect when any of these values change
+  }, [selectedVideo, selectedMode]);
 
-  const handleRetry = () => {
-    setVideoError(false); // reset the video error state to false when retrying to load the video
-    setIsVideoLoading(true); // set the video loading state to true when retrying to load the video
-    setRetryKey((prev) => prev + 1); // increment the retryKey state to force re-rendering of the video element
-  }; // manage retry for loading error
+  // Automatic background polling when Cloudinary is processing dynamic transformations
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (videoError && retryCount < 8) {
+      timer = setTimeout(() => {
+        setVideoError(false);
+        setIsVideoLoading(true);
+        setRetryCount((prev) => prev + 1);
+        setRetryKey((prev) => prev + 1);
+      }, 3000); // Poll every 3 seconds
+    }
+    return () => clearTimeout(timer);
+  }, [videoError, retryCount]);
+
+  const handleManualRetry = () => {
+    setVideoError(false);
+    setIsVideoLoading(true);
+    setRetryCount(0);
+    setRetryKey((prev) => prev + 1);
+  };
 
   const handleDownload = () => {
-    if (!transformedUrl || !selectedVideo) return; //none
+    if (!transformedUrl || !selectedVideo) return;
 
-    const extension = activeModeObj.isGif ? "gif" : "mp4"; //gif or mp4
-    const link = document.createElement("a"); // new anchor element to trigger the download
-    link.href = transformedUrl; // assign the transformed url to the anchor's href attribute
-    link.setAttribute("download", `${selectedVideo.title}_${selectedMode}.${extension}`); // set the download attribute with a filename based on the selected video title and mode
-    link.setAttribute("target", "_blank"); // set the target attribute to "_blank" to open the download in a new tab
-    document.body.appendChild(link); // append the anchor element to the document body to make it part of the DOM
-    link.click(); // programmatically trigger a click event on the anchor element to initiate the download
-    document.body.removeChild(link);// remove the anchor element from the document body after the download is initiated to clean up the DOM
+    const extension = activeModeObj.isGif ? "gif" : "mp4";
+    const link = document.createElement("a");
+    link.href = transformedUrl;
+    link.setAttribute("download", `${selectedVideo.title}_${selectedMode}.${extension}`);
+    link.setAttribute("target", "_blank");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -231,23 +243,30 @@ export default function VideoStudioPage() {
                   {isVideoLoading && !videoError && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-base-100/70 z-20 backdrop-blur-sm">
                       <Loader2 className="w-10 h-10 text-primary animate-spin mb-2" />
-                      <p className="text-sm font-semibold text-primary">Processing Cloudinary transformation...</p>
-                      <p className="text-xs text-base-content/60 mt-1">Preparing AI gravity crop & stream</p>
+                      <p className="text-sm font-semibold text-primary">Cloudinary AI is generating your video...</p>
+                      <p className="text-xs text-base-content/60 mt-1">
+                        {retryCount > 0 ? `Auto-checking preview (Attempt ${retryCount + 1} of 8)...` : "Applying gravity crop & scene highlights"}
+                      </p>
                     </div>
                   )}
 
-                  {/* Error / Retry Overlay */}
+                  {/* Processing / Polling Overlay */}
                   {videoError && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-base-100/90 z-30">
-                      <p className="text-error font-semibold mb-1">Transformation processing on Cloudinary...</p>
-                      <p className="text-xs text-base-content/60 mb-4 max-w-xs">
-                        Cloudinary is generating the AI crop in the background. Click retry to load the preview.
-                      </p>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-base-100/90 z-30 space-y-3">
+                      <div className="p-3 bg-primary/10 rounded-full text-primary animate-pulse">
+                        <PlayCircle className="w-8 h-8" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-base-content">Transformation processing on Cloudinary AI...</p>
+                        <p className="text-xs text-base-content/60 mt-1 max-w-xs">
+                          Cloudinary is encoding the scenes in the background. Auto-retrying preview in a moment...
+                        </p>
+                      </div>
                       <button
-                        onClick={handleRetry}
-                        className="btn btn-sm btn-primary"
+                        onClick={handleManualRetry}
+                        className="btn btn-sm btn-primary rounded-xl"
                       >
-                        <RefreshCw className="w-4 h-4 mr-1" /> Retry Preview
+                        <RefreshCw className="w-4 h-4 mr-1" /> Refresh Preview Now
                       </button>
                     </div>
                   )}
@@ -308,5 +327,5 @@ export default function VideoStudioPage() {
         </div>
       </div>
     </div>
-  ); // frontend UI for AI video studio, allowing users to select a video, choose a transformation mode (like Shorts/Reels, GIF, or highlights), view a live preview of the transformed video, and download the edited video or GIF.
+  );
 }
